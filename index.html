@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>３班特製！東海道クイズ</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #e0f7fa; padding: 20px; overflow-x: hidden; }
+        .card { background: white; padding: 20px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 6px 12px rgba(0,0,0,0.15); text-align: left; position: relative; }
+        h1 { color: #006064; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); font-size: 28px; }
+        .question-text { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+        button { display: block; width: 100%; margin: 10px 0; padding: 12px; font-size: 16px; cursor: pointer; border-radius: 5px; border: 2px solid #ccc; background: #f9f9f9; text-align: left; transition: all 0.1s ease; }
+        
+        /* 選択肢ボタンもホバーで少し激しく動くヨ */
+        button:hover { background: #b2dfdb; transform: scale(1.02) rotate(0.5deg); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #00838f; }
+        
+        .btn-center { text-align: center; }
+        .btn-center button { display: inline-block; width: auto; padding: 12px 30px; font-weight: bold; background: #00838f; color: white; text-align: center; font-size: 18px; }
+        .btn-center button:hover { background: #006064; transform: scale(1.05); }
+        .score-zone { text-align: center; font-size: 20px; font-weight: bold; }
+        ul { padding-left: 20px; line-height: 1.6; }
+        li { margin-bottom: 8px; }
+        
+        /* 🎵 音のコントロールボタン用スタイル */
+        .sound-ctrl { text-align: center; margin-bottom: 15px; }
+        .sound-ctrl button { display: inline-block; width: auto; padding: 10px 25px; font-size: 16px; background: #ff5722; color: white; border: none; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.15); border-radius: 25px; }
+        .sound-ctrl button:hover { background: #e64a19; transform: scale(1.05); }
+        
+        /* ⭕️❌ウルトラポップアップアニメーション */
+        .result-ox { font-size: 50px; font-weight: bold; text-align: center; margin-bottom: 10px; animation: super-pop 0.3s cubic-bezier(0.9, -0.6, 0.2, 1.5) forwards; }
+        .correct-ans { color: #2e7d32; text-shadow: 0 0 15px rgba(46,125,50,0.4); }
+        .wrong-ans { color: #c62828; text-shadow: 0 0 15px rgba(198,40,40,0.4); }
+        
+        @keyframes super-pop {
+            0% { transform: scale(0) rotate(-20deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* 💨 激しく横から「シュバッッ！」と飛び出す画面切り替えエフェクト */
+        .dash-in-effect {
+            animation: dashInFrame 0.25s cubic-bezier(0.075, 0.82, 0.165, 1) forwards;
+        }
+        @keyframes dashInFrame {
+            0% { opacity: 0; transform: translateX(100px) skewX(-10deg); }
+            100% { opacity: 1; transform: translateX(0) skewX(0deg); }
+        }
+
+        /* ⚡️ 正解した時に画面全体が「ガガガガッ！」って震える大迫力のシェイクエフェクト */
+        .shake-effect {
+            animation: shakeFrame 0.3s linear;
+        }
+        @keyframes shakeFrame {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-8px, 5px); }
+            20% { transform: translate(8px, -5px); }
+            30% { transform: translate(-6px, -3px); }
+            40% { transform: translate(6px, 4px); }
+            50% { transform: translate(-4px, 2px); }
+            60% { transform: translate(4px, -2px); }
+            70% { transform: translate(-2px, 1px); }
+            80% { transform: translate(2px, -1px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .explanation-box { background: #f5f5f5; padding: 15px; border-radius: 5px; border-left: 5px solid #00838f; margin-top: 15px; line-height: 1.5; font-size: 16px; }
+        .rank-text { font-size: 26px; color: #d84315; margin: 15px 0; font-weight: bold; text-shadow: 1px 1px 0 #fff; }
+        
+        .form-btn { background: #673ab7 !important; color: white !important; font-weight: bold; margin-top: 20px !important; text-align: center !important; font-size: 20px !important; box-shadow: 0 6px 15px rgba(103,58,183,0.4); animation: super-pulse 1s infinite alternate; border: none; }
+        .form-btn:hover { background: #512da8 !important; }
+        
+        @keyframes super-pulse {
+            0% { transform: scale(0.96); box-shadow: 0 4px 10px rgba(103,58,183,0.3); }
+            100% { transform: scale(1.04); box-shadow: 0 8px 20px rgba(103,58,183,0.6); }
+        }
+
+        .secret-code-box { background: #fff3e0; border: 3px dashed #ff9800; padding: 15px; border-radius: 5px; margin: 15px 0; font-size: 32px; color: #e65100; font-weight: bold; letter-spacing: 6px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); animation: pop 0.5s ease; }
+        .particle { position: fixed; width: 12px; height: 12px; opacity: 0.9; z-index: 999; pointer-events: none; border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <h1>⚡️３班特製！激闘東海道クイズ⚡️</h1>
+    
+    <div class="sound-ctrl">
+        <button id="bgm-toggle-btn" onclick="toggleBGM()">🔥 【爆音激アツBGM】を起動せよ！！</button>
+    </div>
+
+    <div class="card dash-in-effect" id="quiz-container">
+        <p class="question-text" style="text-align: center; color: #d32f2f;">⚠️ クイズを始めるまえの絶対ちゅういじこう ⚠️</p>
+        <hr>
+        <ul>
+            <li><strong>無断転載（むだんてんさい）の禁止：</strong> このクイズの文章やプログラムを、３班にないしょでほかのサイトやSNSに勝手にコピーして貼り付けたりしないでネ。</li>
+            <li><strong>みんなで仲良く遊ぼう：</strong> クイズの答えを大声でさけんだり、お友達にネタバレしたりしないで、みんなで楽しく挑戦してネ。</li>
+            <li><strong>まじめにお勉強しよう：</strong> 東海道五十三次を極めるための超絶バトルだヨ。満点を目指して突っ走れ！</li>
+        </ul>
+        <hr>
+        <div class="btn-center">
+            <button onclick="startQuiz()">爆速でクイズバトルをスタート！ ⚡️</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "1. 東海道のスタート地点である江戸の「日本橋」だけど、ここには現代でも日本の道路にとって、とっても重要な『ある基準』があるんだヨ❗それって何かな❓", a: ["日本全国の道路の距離（きょり）をはかる、すべての出発点（道路元標）", "日本で一番最初に作られた、自動販売機が置いてある場所", "お殿様が毎日お散歩をスタートさせる場所"], correct: 0, exp: "日本橋の真ん中には「日本国道路元標（どうろげんぴょう）」というプレートがあって、ここから全国（京都や青森など）への距離がすべて計算されているんだヨ！日本の道路のバッチリ中心地なんだネ。🗾" },
+            { q: "2. 大磯と小田原の間にある「押切（おしきり）」などにも作られた、旅人が距離を知るための「一里塚（いちりづか）」。これって約何キロメートルごとに作られていたかな❓", a: ["約4キロメートルごと", "約40キロメートルごと", "約400メートルごと"], correct: 0, exp: "「一里」は江戸時代の単位で、今の長さでいうと「約4キロメートル」なんだヨ。旅人たちは一里塚を見つけるたびに、「よし、次の4キロを歩ききったぞ！」って休憩（きゅうけい）の目安にしていたんだネ。歩くスピードの計算もできて便利だったんだヨ！✨" },
+            { q: "3. 昔の東海道の大きな川（大井川など）には、江戸を守るためにあえて橋が架けられなかったから「川越人足（かわごえにんそく）」というプロの人に担いでもらって渡ったんだヨ。じゃあ、大雨で川の水が増えすぎて渡れなくなることを何て呼んでいたかな❓", a: ["川止め（かわどめ）", "川休み（かわやすみ）", "川プール（かわぷーる）"], correct: 0, exp: "川の水深が深くなって危険なレベルになると「川止め」といって、水が減るまで何日も近くの宿場町でお休みしなければならなかったんだヨ。予定が遅れちゃうし、宿代（ホテル代）も余計にかかって旅人は大ピンチになったんだネ！💦" },
+            { q: "4. 平塚宿の手前にある川は、お殿様の源頼朝（みなもとのよりとも）が乗っていた大切なお馬さんが暴れてドボーンと入っちゃった歴史から名前がついたんだヨ❗その川の今の正式な名前は何かな❓", a: ["相模川（さがみがわ）", "多摩川（たまがわ）", "荒川（あらかわ）"], correct: 0, exp: "頼朝のお馬さんが入っちゃったから昔は「馬入川（ばにゅうがわ）」って呼ばれていて、今の「相模川」の下流（海に近いところ）のことんだヨ！平塚の歴史にとっても深く関係している川なんだネ。🐎" },
+            { q: "5. 小田原宿の名物として、旅人がお守り代わりに必ず買った有名なお薬「ういろう（透頂香）」。これを口に入れると、旅人にどんな良い効果があったのかな❓", a: ["口の中がスーッとスッキリして、歩き疲れた体がシャキッと元気になった", "足の裏の筋肉がムキムキになって、新幹線より速く走れるようになった", "お腹がいっぱいになって、3日間ご飯を食べなくてよくなった"], correct: 0, exp: "ういろうはハッカなどの独特な匂いがするお薬で、頭をシャキッとさせたり、疲れを吹き飛ばしたりする常備薬（じょうびやく）だったんだヨ。美味しくて甘いお菓子のういろうも、このお薬のおもてなしから生まれたんだネ！💊" },
+            { q: "6. 箱根の急な山道を登るとき、雨が降ると地面がドロドロになって滑って危ないから、江戸幕府が大量の大きな石を敷き詰めて作った美しい道の下を何ていうかな❓", a: ["石畳（いしだたみ）", "アスファルト", "コンクリート"], correct: 0, exp: "ゴロゴロした大きな石をパズルのようにキレイに並べた「石畳」の道だヨ！これのおかげで、雨の日でも滑らずに箱根の山を越えることができたんだネ。今でも箱根に行くと、江戸時代の石畳がそのまま残っていて歩くことができるヨ。🌲" },
+            { q: "7. 「箱根関所（はこねせきしょ）」では、江戸の町を悪い敵から守るためにパスポートや荷物をめちゃくちゃ厳しくチェックしていたんだヨ。そのとき、特に目を光らせて見張っていた有名な取り締まりの言葉は何かな❓", a: ["入鉄砲に出女（いりてっぽうに出おんな）", "入カレーに出ピザ", "入スマホに出テレビ"], correct: 0, exp: "江戸に武器が入ってくること（入鉄砲）と、江戸に人質として置いてあるお殿様の奥さんたちが自分の国へ逃げ出すこと（出女）を、何よりも厳しくチェックしていたんだヨ。とっても緊張感のある場所だったんだネ！🕵️" },
+            { q: "8. 東海道には全部で「53」の宿場町（ホテル街）があったけど、お殿様（大名）や身分の高い貴族だけが泊まることができる、一番豪華で特別な指定宿（高級ホテル）のことを何て呼んだかな❓", a: ["本陣（ほんじん）", "旅籠（はたご）", "カプセルホテル"], correct: 0, exp: "お殿様専用のいちばん格式高い高級宿を「本陣（ほんじん）」、その予備を「脇本陣（わきほんじん）」って言うんだヨ！ちなみに、一般の普通の旅人たちがご飯を食べて泊まる普通の宿屋さんは「旅籠（はたご）」って呼んでいたんだネ。🏠" },
+            { q: "9. 宿場から宿場へと、手紙や大切な荷物を全力疾走のリレーでつないで、信じられないスピードで遠くまで運んだ江戸時代の配達員（郵便屋さん）を何ていうかな❓", a: ["飛脚（ひきゃく）", "トラック運転手", "ドローン"], correct: 0, exp: "「飛脚」は走るのがめちゃくちゃ速くて、江戸（東京）から京都までの遠い距離を、なんとわずか数日で届ける超特急の飛脚もいたんだヨ！日本の陸上選手もびっくりな、すごい体力とスピードの持ち主だったんだネ。🏃" },
+            { q: "10. 三島宿（静岡県）に無事にたどり着いた旅人が、長い旅の安全を神様にお願いしにいった、源頼朝も大勝利の祈願をしたという、とっても格式高い神社の名前は何かな❓", a: ["三嶋大社（みしまたいしゃ）", "鶴岡八幡宮（つるがおかはちまんぐう）", "伊勢神宮（いせじんぐう）"], correct: 0, exp: "三島宿にある「三嶋大社」は、伊豆国（いずのくに）で一番偉い神社だヨ。源頼朝が「平氏を倒して新しい幕府を作るぞ！」ってお祈りをして、見事に大勝利したことから、縁起が良いパワースポットとして昔から大人気だったんだネ！⛩️" }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let audioCtx = null;
+        let isSoundOn = false;
+        let bgmInterval = null;
+
+        function playTone(freq, type, duration, volume = 0.1) {
+            if (!isSoundOn) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.log(e); }
+        }
+
+        // 🔥 少し激しめ、テンポが速いノリノリの作業用BGM
+        function startLoopingBGM() {
+            if (bgmInterval) clearInterval(bgmInterval);
+            // アップテンポな電撃バトル風メロディライン
+            const melody = [293.66, 349.23, 392.00, 440.00, 392.00, 349.23, 293.66, 392.00]; 
+            let step = 0;
+            
+            bgmInterval = setInterval(() => {
+                if (!isSoundOn) { clearInterval(bgmInterval); return; }
+                playTone(melody[step % melody.length], 'square', 0.1, 0.02); // ギザギザしたかっこいい音
+                step++;
+            }, 180); // さっきより2倍近く速いテンポ！
+        }
+
+        function toggleBGM() {
+            isSoundOn = !isSoundOn;
+            const btn = document.getElementById("bgm-toggle-btn");
+            if (isSoundOn) {
+                btn.innerText = "⚡️ BGM起動中！(おすと爆音停止)";
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                startLoopingBGM();
+            } else {
+                btn.innerText = "🔥 【爆音激アツBGM】を起動せよ！！";
+                if (bgmInterval) clearInterval(bgmInterval);
+            }
+        }
+
+        function startQuiz() {
+            showQuestion();
+        }
+
+        // 💥 超高速スライドインを発生させる
+        function triggerDashIn() {
+            const container = document.getElementById("quiz-container");
+            container.classList.remove("dash-in-effect");
+            void container.offsetWidth; 
+            container.classList.add("dash-in-effect");
+        }
+
+        // ⚡️ 画面をガガガッとシェイクさせる
+        function triggerShake() {
+            const container = document.getElementById("quiz-container");
+            container.classList.remove("shake-effect");
+            void container.offsetWidth; 
+            container.classList.add("shake-effect");
+        }
+
+        function showQuestion() {
+            const container = document.getElementById("quiz-container");
+            triggerDashIn(); // 激しくスライドイン！
+            
+            if (currentIdx >= quizData.length) {
+                let rank = "";
+                let comment = "";
+                let formAndSecretHtml = ""; 
+                
+                if (score === 10) { 
+                    rank = "💥 👑 【最強神：ウルトラ東海道マスター】 👑 💥";
+                    comment = "完全全問正解！！圧倒的すぎる歴史の神だッッ💯江戸の飛脚も光の速さでブチ抜く最強無敵のプレイヤーーーッッ⚡️💥";
+                    
+                    formAndSecretHtml = `
+                        <div style="text-align:center;">
+                            <p style="font-weight:bold; color:#e65100; margin-bottom:5px;">🔑 満点王者の証！秘密の暗号 🔑</p>
+                            <div class="secret-code-box">TOFU</div>
+                            <p style="font-size:12px; color:#666;">※この最強の暗号を３班に突きつけろ！！</p>
+                        </div>
+                        <hr>
+                        <p style="font-size:18px; font-weight:bold; color:#673ab7;">👇 【完全勝利者限定】スコアを世界ランキングに叩き込めッッ！！ 👇</p>
+                        <button class="form-btn" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSd8sGEbQR4b7XnlxdmQxe91gUGd0xmNzG2NTHDnHuHfRHH3pQ/viewform?usp=publish-editor', '_blank')">🔥 ランキングに名を刻む（Googleフォーム） 🔥</button>
+                        <hr>
+                    `;
+                    
+                    // 🎆 勝利の大ファンファーレ
+                    setTimeout(() => playTone(523.25, 'sawtooth', 0.1, 0.2), 0);   
+                    setTimeout(() => playTone(659.25, 'sawtooth', 0.1, 0.2), 100); 
+                    setTimeout(() => playTone(783.99, 'sawtooth', 0.1, 0.2), 200); 
+                    setTimeout(() => playTone(1046.50, 'sawtooth', 0.5, 0.3), 300); 
+
+                    for(let i=0; i<150; i++) { setTimeout(createParticle, i * 15); } // 紙吹雪もハイスピード増量！
+
+                } else if (score >= 8) {
+                    rank = "🏅 【猛者：ベテラン旅人】";
+                    comment = "超絶お見事！あと一歩で神の領域だったネッッ突風のような正解率、マジですごすぎるぜ大活躍確定👍🔥";
+                    formAndSecretHtml = `<p style="color:#d32f2f; font-weight:bold; font-size:18px;">⚠️ 満点（10点）でシークレット暗号＆最強ボタンが解禁！リベンジを待つ！</p><hr>`;
+                } else if (score >= 5) {
+                    rank = "🏃 【戦士：かけだし旅人】";
+                    comment = "半分以上撃破！素晴らしいバトルセンスだヨ！解説を叩き込んで次こそ満点を奪い取れッッ👊✨";
+                    formAndSecretHtml = `<p style="color:#d32f2f; font-weight:bold; font-size:18px;">⚠️ 満点（10点）でシークレット暗号＆最強ボタンが解禁されるぜ！</p><hr>`;
+                } else {
+                    rank = "🎒 【防衛：お留守番さん】";
+                    comment = "ナイスファイト！今回は敵（問題）がちょっと強すぎたな❓３班の解説を読んでレベルアップだ！💥";
+                    formAndSecretHtml = `<p style="color:#d32f2f; font-weight:bold; font-size:18px;">⚠️ 満点（10点）でシークレット暗号＆最強ボタンが解禁されるぜ！</p><hr>`;
+                }
+
+                container.innerHTML = `
+                    <div class="score-zone">
+                        <h2>🎉 BATTLE FINISHED！ 🎉</h2>
+                        <p style="font-size:24px;">スコア：【${score} / 10問全問撃破】</p>
+                        <div class="rank-text">${rank}</div>
+                        <p style="font-size:16px;">${comment}</p>
+                        <hr>
+                        ${formAndSecretHtml}
+                        <div class="btn-center">
+                            <button onclick="location.reload()">もう一度戦場（最初）へ戻る！！</button>
+                        </div>
+                    </div>`;
+                return;
+            }
+            
+            const data = quizData[currentIdx];
+            container.innerHTML = `
+                <p class="question-text">${data.q}</p>
+                <div id="answers"></div>
+            `;
+            
+            const answersDiv = document.getElementById("answers");
+            const originalCorrectText = data.a[data.correct];
+            
+            let shuffledAnswers = [...data.a];
+            for (let i = shuffledAnswers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledAnswers[i], shuffledAnswers[j]] = [shuffledAnswers[j], shuffledAnswers[i]];
+            }
+            
+            shuffledAnswers.forEach((text) => {
+                const btn = document.createElement("button");
+                btn.innerText = text;
+                btn.onclick = () => {
+                    let isCorrect = (text === originalCorrectText);
+                    if (isCorrect) {
+                        score++;
+                        // 🔔 正解の強烈レーザー音
+                        playTone(587.33, 'sawtooth', 0.05, 0.2);
+                        setTimeout(() => playTone(1174.66, 'sine', 0.15, 0.2), 50);
+                        triggerShake(); // 正解したら画面がガガガッと震える！
+                        for(let i=0; i<30; i++) { createParticle(); }
+                    } else {
+                        // 💢 不正解の重爆撃音
+                        playTone(130, 'sawtooth', 0.4, 0.25);
+                        triggerShake(); // 間違えてもショックで震える！
+                    }
+                    showExplanation(isCorrect, data.exp, originalCorrectText);
+                };
+                answersDiv.appendChild(btn);
+            });
+        }
+
+        function showExplanation(isCorrect, expText, correctAnsText) {
+            const container = document.getElementById("quiz-container");
+            triggerDashIn(); // 解説画面への切り替えもハイスピードスライド！
+            
+            let oxHeader = "";
+            if (isCorrect) {
+                oxHeader = '<div class="result-ox correct-ans">⚡️ CRITICAL HIT（正解）！！</div>';
+            } else {
+                oxHeader = `
+                    <div class="result-ox wrong-ans">💥 DAMAGE（不正解）！！</div>
+                    <div style="text-align:center; font-size:20px; margin-bottom:10px; font-weight:bold; color:#e53935;">
+                        真実の正解は... 【 ${correctAnsText} 】 だったッッ！
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = `
+                ${oxHeader}
+                <hr>
+                <p class="question-text" style="color:#00838f; text-align:center;">💡 ３班データ解析（解説） 💡</p>
+                <div class="explanation-box">
+                    ${expText}
+                </div>
+                <hr>
+                <div class="btn-center">
+                    <button onclick="nextQuestion()">次なる戦場（問題）へ進む ➡️</button>
+                </div>
+            `;
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            showQuestion();
+        }
+
+        function createParticle() {
+            const p = document.createElement("div");
+            p.classList.add("particle");
+            document.body.appendChild(p);
+            
+            const colors = ["#ff1744", "#00e676", "#29b6f6", "#ffea00", "#d500f9", "#ff9100"];
+            p.style.background = colors[Math.floor(Math.random() * colors.length)];
+            
+            const x = Math.random() * window.innerWidth;
+            const y = -10;
+            p.style.left = x + "px";
+            p.style.top = y + "px";
+            
+            // 飛び散るスピードもハイスピード化！
+            let speedY = Math.random() * 8 + 4;
+            let speedX = Math.random() * 6 - 3;
+            let currentY = y;
+            let currentX = x;
+            
+            const timer = setInterval(() => {
+                currentY += speedY;
+                currentX += speedX;
+                p.style.top = currentY + "px";
+                p.style.left = currentX + "px";
+                
+                if (currentY > window.innerHeight) {
+                    clearInterval(timer);
+                    p.remove();
+                }
+            }, 16);
+        }
+    </script>
+</body>
+</html>
